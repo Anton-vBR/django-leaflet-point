@@ -1,0 +1,122 @@
+{% extends "admin/change_form.html" %}
+{% load i18n admin_urls %}
+
+{% block after_related_objects %}
+
+<div id="map"> </div>
+
+<style>
+  #map { 
+    height: {{ map_height }}px; 
+  }
+</style>
+<script>
+
+$ = django.jQuery
+
+var lat_input_selector = "#id_{{ lat_input_selector }}"
+var lng_input_selector = "#id_{{ lng_input_selector }}"
+
+var initial_lat = {{ initial_lat }}
+var initial_lng = {{ initial_lng }}
+var initial_zoom = {{ initial_zoom }}
+  
+// Initial zoom level if input fields have a location.
+var initial_with_loc_zoom = 14
+
+$lat = $(lat_input_selector);
+$lng = $(lng_input_selector);
+var has_initial_loc = ($lat.val() && $lng.val())
+
+if (has_initial_loc) {
+  // There is lat/lng in the fields, so centre the map on that.
+  initial_lat = parseFloat($lat.val())
+  initial_lng = parseFloat($lng.val())
+  initial_zoom = initial_with_loc_zoom
+};
+
+var map, marker, initialClick=false;
+
+map = L.map('map', {
+  minZoom: {{ min_zoom }},
+  maxZoom: {{ max_zoom }},
+}).setView([initial_lat,initial_lng], initial_zoom);
+
+var OpenStreetMap_Mapnik = L.tileLayer("{{ tile_layer }}", {
+  maxZoom: {{ max_zoom_tilelayer }},
+  attribution: "{{ attribution }}",
+}).addTo(map);
+
+// Add geocoder with custom function on markgeocode 
+if ("{{ geocoder }}" === 'True') {
+  var geocoder = L.Control.geocoder({
+    defaultMarkGeocode: false
+  })
+  .on('markgeocode', function(e) {
+      console.log(e.geocode)
+      map.panTo([e.geocode.center.lat,e.geocode.center.lng]);
+      setMarkerPosition(e.geocode.center.lat,e.geocode.center.lng);
+  })
+  .addTo(map);
+}
+
+// Disable save on submit to prevent save when searching for geocoding
+// $( "form" ).submit(function( event ) {
+//   var cond1 = typeof $(document.activeElement).attr('id') === 'undefined'
+//   var cond2 = !$(document.activeElement).val().startsWith('Save')
+//   if (cond1 && cond2) {
+//     event.preventDefault();  
+//   } 
+// });
+
+marker = L.marker([initial_lat, initial_lng], {
+  draggable: true
+}).on("dragend",function(event){
+  var newPos = event.target.getLatLng();
+  setInputValues(newPos.lat, newPos.lng);
+});
+
+if (has_initial_loc) {
+  // There is lat/lng in the fields, so centre the marker on that.
+  setMarkerPosition(initial_lat, initial_lng);
+} else {
+  // If not make map clickable.
+  map.on('click', function(event){
+    if (!initialClick) {
+      var newPos = event.latlng;
+      setMarkerPosition(newPos.lat, newPos.lng);
+      initialClick = !initialClick
+    }
+  })
+}
+
+function setMarkerPosition(lat, lng) {
+  marker.setLatLng({lat: lat, lng: lng}).addTo(map);
+  console.log(lat, lng)
+  setInputValues(lat, lng);
+};
+
+function setInputValues(lat, lng) {
+  setInputValue($lat, lat);
+  setInputValue($lng, lng);
+};
+
+function setInputValue($input, val) {
+    // step should be like "0.000001".
+    var step = $input.prop('step');
+    var dec_places = 0;
+
+    if (step) {
+      if (step.split('.').length == 2) {
+        dec_places = step.split('.')[1].length;
+      };
+
+      val = val.toFixed(dec_places);
+    };
+
+    $input.val(val);
+  };
+
+</script>
+
+{% endblock %}

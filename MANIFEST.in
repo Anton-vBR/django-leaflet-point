@@ -1,0 +1,2 @@
+recursive-include leaflet_point/templates *
+recursive-include leaflet_point/static *.js *.css *.png *.svg
