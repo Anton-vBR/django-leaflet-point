@@ -5,7 +5,7 @@ django-leaflet-point is a simple Django app inspired by the django-leaflet app t
 Installation
 -------------
 
-To get the latest version, simply do::
+To get the latest version, simply do:
 
     pip install django-leaflet-point
 
