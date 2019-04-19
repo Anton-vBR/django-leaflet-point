@@ -99,6 +99,7 @@ No specific. However, on request:
  - Fix bugs
  - Add more functionality
  - Create and update docs (non-existing)
+ - Create tests
 
 
 License
